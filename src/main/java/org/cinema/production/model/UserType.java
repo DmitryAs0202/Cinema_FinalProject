@@ -19,4 +19,6 @@ public enum UserType {
   public void setRussianName(String russianName) {
     this.russianName = russianName;
   }
+
+
 }

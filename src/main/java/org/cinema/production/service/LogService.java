@@ -187,6 +187,17 @@ public class LogService {
     List<String> log = readLog();
     log.add(userName + " добавил нового пользователя: " + user);
     writeLog(log, file);
+    File file1 = new File(LOGS_PATH + user + ".log");
+    LocalDateTime date = LocalDateTime.now();
+    try {
+      PrintWriter pw = new PrintWriter(file1);
+      pw.println(
+          date.format(DateTimeFormatter.ofPattern(FORMATTER)) + " Пользователь " + user + " "
+              + "зарегистрирован.");
+      pw.close();
+    } catch (FileNotFoundException e) {
+      e.printStackTrace();
+    }
   }
 
   public static void deleteUser(String user) {
@@ -201,6 +212,17 @@ public class LogService {
     List<String> log = readLog();
     log.add(userName + " изменил логин пользователя " + oldName + ". Новый логин- " + newName);
     writeLog(log, file);
+    File file1 = new File(LOGS_PATH + newName + ".log");
+    LocalDateTime date = LocalDateTime.now();
+    try {
+      PrintWriter pw = new PrintWriter(file1);
+      pw.println(
+          date.format(DateTimeFormatter.ofPattern(FORMATTER)) + " Имя пользователя " + oldName + " "
+              + "было изменено на " + newName);
+      pw.close();
+    } catch (FileNotFoundException e) {
+      e.printStackTrace();
+    }
   }
 
   public static void openEditionMenu() {

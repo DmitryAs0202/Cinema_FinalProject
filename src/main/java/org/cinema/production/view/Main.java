@@ -14,7 +14,7 @@ import org.cinema.production.service.JDBCTicketService;
 import org.cinema.production.service.JDBCUserService;
 import org.cinema.production.service.LogService;
 import org.cinema.production.service.Security;
-;
+
 
 public class Main {
 
@@ -25,7 +25,6 @@ public class Main {
   public static void main(String[] args) {
 
     startConsole();
-    //System.out.println(Security.getHashPassword("StartPassword"));
 
   }
 
@@ -281,74 +280,79 @@ public class Main {
         showActions();
         break;
       case 5:
-        try {
-          JDBCTicketService.ticketMap = JDBCTicketService.getTickets(2);
-          if (JDBCTicketService.ticketMap.isEmpty()) {
-            throw new Exception();
-          }
-          JDBCTicketService.showTicketMap();
-          switch (language) {
-            case DEFAULT_LANGUAGE:
-              System.out.print("Введите номер билета, который хотите выкупить: ");
-              break;
-            default:
-              System.out.print("Enter the ticket number you want to redeem: ");
-              break;
-          }
-          int choice1 = scanner.nextInt();
-          if (JDBCTicketService.ticketMap.containsKey(choice1)) {
-            Ticket ticket = JDBCTicketService.ticketMap.get(choice1);
-            JDBCTicketService.addTicketToPurchased(ticket);
-            JDBCTicketService.removeTicket(ticket, 3);
-            LogService.acceptReservation(ticket);
-            switch (language) {
-              case DEFAULT_LANGUAGE:
-                System.out.println("Был выкуплен: " + ticket);
-                break;
-              default:
-                System.out.println(ticket + " was redeemed.");
-                break;
-            }
-            JDBCTicketService.ticketMap.clear();
-            System.out.println();
-            showActions();
-          } else {
-            switch (language) {
-              case DEFAULT_LANGUAGE:
-                System.out.println("Нет такого билета...");
-                break;
-              default:
-                System.out.println("No such ticket...");
-            }
-            showActions();
-          }
-        } catch (SQLException e) {
-          switch (language) {
-            case DEFAULT_LANGUAGE:
-              System.out.println("Соединение не установлено, попробуйте позже...");
-              break;
-            default:
-              System.out.println("Connection error. Please try later...");
-              break;
-          }
-          showActions();
-        } catch (Exception throwables) {
-          switch (language) {
-            case DEFAULT_LANGUAGE:
-              System.out.println("У вас нет забронированных билетов");
-              break;
-            default:
-              System.out.println("You have no tickets booked");
-              break;
-          }
-          showActions();
-        }
+        buyReservedTicket();
         break;
       default:
         LogService.logOut();
         System.out.println();
         startMenu();
         break;
+    }
+  }
+
+  public static void buyReservedTicket() {
+    Scanner scanner = new Scanner(System.in);
+    try {
+      JDBCTicketService.ticketMap = JDBCTicketService.getTickets(2);
+      if (JDBCTicketService.ticketMap.isEmpty()) {
+        throw new Exception();
+      }
+      JDBCTicketService.showTicketMap();
+      switch (language) {
+        case DEFAULT_LANGUAGE:
+          System.out.print("Введите номер билета, который хотите выкупить: ");
+          break;
+        default:
+          System.out.print("Enter the ticket number you want to redeem: ");
+          break;
+      }
+      int choice1 = scanner.nextInt();
+      if (JDBCTicketService.ticketMap.containsKey(choice1)) {
+        Ticket ticket = JDBCTicketService.ticketMap.get(choice1);
+        JDBCTicketService.addTicketToPurchased(ticket);
+        JDBCTicketService.removeTicket(ticket, 3);
+        LogService.acceptReservation(ticket);
+        switch (language) {
+          case DEFAULT_LANGUAGE:
+            System.out.println("Был выкуплен: " + ticket);
+            break;
+          default:
+            System.out.println(ticket + " was redeemed.");
+            break;
+        }
+        JDBCTicketService.ticketMap.clear();
+        System.out.println();
+        showActions();
+      } else {
+        switch (language) {
+          case DEFAULT_LANGUAGE:
+            System.out.println("Нет такого билета...");
+            break;
+          default:
+            System.out.println("No such ticket...");
+        }
+        showActions();
+      }
+    } catch (SQLException e) {
+      switch (language) {
+        case DEFAULT_LANGUAGE:
+          System.out.println("Соединение не установлено, попробуйте позже...");
+          break;
+        default:
+          System.out.println("Connection error. Please try later...");
+          break;
+      }
+      showActions();
+    } catch (Exception throwables) {
+      switch (language) {
+        case DEFAULT_LANGUAGE:
+          System.out.println("У вас нет забронированных билетов");
+          break;
+        default:
+          System.out.println("You have no tickets booked");
+          break;
+      }
+      showActions();
     }
   }
 
@@ -1035,7 +1039,8 @@ public class Main {
       String newUserName = bf.readLine();
       User user = new User(newUserName);
       if (!JDBCUserService.isSuchUser(user)) {
-        user.setPassword("StartPassword");
+        String password = "StartPassword";
+        user.setPassword(Security.getHashPassword(password));
         user.setType(UserType.USER);
         JDBCUserService.addUser(user);
         LogService.addNewUser(newUserName);
@@ -1063,6 +1068,12 @@ public class Main {
     User user = new User(userName);
     try {
       if (JDBCUserService.isSuchUser(user)) {
+        user = JDBCUserService.allUsers.get(JDBCUserService.allUsers.indexOf(user));
+        if (user.getType() == UserType.ADMIN) {
+          System.out.println("Попытка удалить администратора!");
+          showAdminActions();
+          return;
+        }
         JDBCUserService.deleteUser(user);
         LogService.deleteUser(userName);
         System.out.println("Пользователь успешно удален.");
